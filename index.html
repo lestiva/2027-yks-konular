@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="2027 YKS çalışma ilerlemesi takip uygulaması">
+  <title>2027 YKS Çalışma Tablosu</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --surface: rgba(17,24,39,.88);
+      --surface-strong: #111827;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --line: #263247;
+      --shadow: 0 14px 40px rgba(0, 0, 0, .34);
+      --shadow-soft: 0 8px 24px rgba(0, 0, 0, .28);
+      --primary: #5b5ce2;
+      --primary-2: #8b5cf6;
+      --success: #10b981;
+      --danger: #e11d48;
+      --radius-lg: 24px;
+      --radius-md: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(850px 430px at 0% -10%, rgba(91,92,226,.16), transparent 65%),
+        radial-gradient(720px 420px at 100% 0%, rgba(139,92,246,.14), transparent 62%),
+        var(--bg);
+    }
+
+    button, input { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    .app-shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0 48px; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(24px, 5vw, 44px);
+      border: 1px solid rgba(255,255,255,.8);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, #111827 0%, #27256d 52%, #6d3bd8 100%);
+      color: white;
+      box-shadow: 0 24px 60px rgba(47, 44, 113, .23);
+    }
+    .hero::before, .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      pointer-events: none;
+      filter: blur(2px);
+    }
+    .hero::before { width: 240px; height: 240px; right: -50px; top: -90px; background: rgba(255,255,255,.12); }
+    .hero::after { width: 170px; height: 170px; left: 46%; bottom: -120px; background: rgba(255,255,255,.08); }
+    .hero-content { position: relative; z-index: 1; }
+    .eyebrow { margin: 0 0 8px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.68); font-weight: 700; }
+    h1 { margin: 0; font-size: clamp(28px, 5vw, 48px); line-height: 1.05; letter-spacing: -.04em; }
+    .hero-copy { margin: 14px 0 0; max-width: 720px; color: rgba(255,255,255,.78); font-size: clamp(14px, 2vw, 16px); line-height: 1.6; }
+
+    .dashboard { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; margin-top: 18px; }
+    .progress-card {
+      padding: 20px;
+      border: 1px solid #263247;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow-soft);
+    }
+    .progress-label { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 700; }
+    .progress-number { font-size: 28px; letter-spacing: -.03em; }
+    .progress-bar { height: 10px; margin-top: 14px; overflow: hidden; border-radius: 999px; background: #1d2638; }
+    .progress-fill { width: 0%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary), var(--primary-2)); transition: width .3s ease; }
+    .progress-meta { margin-top: 9px; font-size: 12px; color: var(--muted); }
+
+    .toolbar {
+      position: sticky; top: 10px; z-index: 20; margin: 18px 0; padding: 12px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      border: 1px solid #263247; border-radius: 18px; background: rgba(15,23,42,.82); backdrop-filter: blur(16px); box-shadow: var(--shadow-soft);
+    }
+    .tabs, .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab, .filter {
+      border: 0; background: transparent; color: var(--muted); min-height: 42px; padding: 0 15px;
+      border-radius: 12px; font-weight: 800; cursor: pointer; transition: .2s ease;
+    }
+    .tab:hover, .filter:hover { background: #1a2233; color: var(--text); }
+    .tab.active { color: white; background: linear-gradient(135deg, var(--primary), var(--primary-2)); box-shadow: 0 8px 18px rgba(91,92,226,.25); }
+    .filter.active { background: rgba(99,102,241,.18); color: #a5b4fc; }
+    .reset-btn {
+      min-height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(251,113,133,.28); background: rgba(225,29,72,.10); color: #fb7185;
+      font-weight: 800; cursor: pointer; transition: .2s ease;
+    }
+    .reset-btn:hover { background: rgba(225,29,72,.16); transform: translateY(-1px); }
+
+    .content-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin: 14px 0; }
+    .section-title { margin: 0; font-size: clamp(21px, 3vw, 28px); letter-spacing: -.025em; }
+    .section-note { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+
+    .subjects { display: grid; gap: 12px; }
+    .subject-card { overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--surface-strong); box-shadow: var(--shadow-soft); transition: transform .2s ease, box-shadow .2s ease; }
+    .subject-card:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+    .subject-head {
+      width: 100%; display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 14px;
+      min-height: 74px; padding: 16px 18px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer;
+    }
+    .subject-main { min-width: 0; }
+    .subject-name { margin: 0; font-size: 17px; font-weight: 850; letter-spacing: -.015em; }
+    .subject-sub { margin-top: 5px; font-size: 12px; color: var(--muted); }
+    .subject-percent { white-space: nowrap; font-size: 13px; font-weight: 850; color: #a5b4fc; }
+    .chevron { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: #1b2436; color: #a5b4fc; transition: transform .25s ease; }
+    .subject-card.open .chevron { transform: rotate(180deg); }
+    .subject-progress { grid-column: 1 / -1; height: 5px; margin-top: -3px; border-radius: 999px; background: #1c2535; overflow: hidden; }
+    .subject-progress > span { display: block; width: 0; height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); transition: width .3s ease; }
+
+    .topic-wrap { display: none; border-top: 1px solid var(--line); background: linear-gradient(#0f172a, #111827); padding: 8px 14px 14px; }
+    .subject-card.open .topic-wrap { display: block; animation: reveal .22s ease; }
+    @keyframes reveal { from { opacity: .2; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    .topic-row { display: flex; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 12px; transition: background .18s ease; }
+    .topic-row:hover { background: #182235; }
+    .topic-label { display: flex; align-items: center; gap: 12px; width: 100%; cursor: pointer; min-width: 0; }
+    .topic-text { line-height: 1.45; font-size: 14px; overflow-wrap: anywhere; }
+    .topic-done { color: var(--success); }
+
+    input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none; flex: 0 0 auto; width: 23px; height: 23px; border-radius: 8px; border: 1.5px solid #4b5563;
+      background: #0f172a; display: grid; place-items: center; cursor: pointer; transition: .2s ease; box-shadow: 0 2px 5px rgba(15,23,42,.05);
+    }
+    input[type="checkbox"]::after { content: "✓"; font-size: 14px; line-height: 1; font-weight: 900; color: white; transform: scale(0); transition: transform .14s ease; }
+    input[type="checkbox"]:checked { border-color: #818cf8; background: linear-gradient(135deg, var(--primary), var(--primary-2)); box-shadow: 0 5px 12px rgba(91,92,226,.24); }
+    input[type="checkbox"]:checked::after { transform: scale(1); }
+    input[type="checkbox"]:focus-visible, button:focus-visible { outline: 3px solid rgba(99,102,241,.25); outline-offset: 2px; }
+
+    .empty { display: none; padding: 38px 16px; text-align: center; border: 1px dashed #334155; border-radius: 18px; color: var(--muted); background: rgba(15,23,42,.68); }
+    .empty.show { display: block; }
+    .footer-note { margin-top: 18px; text-align: center; color: #7c879a; font-size: 12px; }
+
+    @media (max-width: 820px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .toolbar { top: 6px; }
+      .subject-head { grid-template-columns: minmax(0,1fr) auto; }
+      .subject-percent { grid-column: 1; grid-row: 2; }
+      .chevron { grid-column: 2; grid-row: 1 / span 2; }
+    }
+    @media (max-width: 560px) {
+      .app-shell { width: min(100% - 18px, 1180px); padding-top: 10px; }
+      .hero { border-radius: 20px; padding: 24px 20px; }
+      .toolbar { border-radius: 16px; padding: 10px; }
+      .tabs, .filters { width: 100%; }
+      .tab, .filter { flex: 1; padding: 0 10px; }
+      .reset-btn { width: 100%; }
+      .subject-head { padding: 14px; }
+      .topic-wrap { padding-inline: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div class="hero-content">
+        <p class="eyebrow">2027 YKS</p>
+        <h1>Çalışma Tablosu</h1>
+        <p class="hero-copy">TYT ve AYT konularını işaretleyerek ilerlemeni tek ekranda takip et. İlerleme otomatik olarak bu tarayıcıya kaydedilir.</p>
+      </div>
+    </header>
+
+    <section class="dashboard" aria-label="Genel ilerleme">
+      <article class="progress-card">
+        <div class="progress-label"><span>TYT</span><strong id="tytPercent" class="progress-number">%0</strong></div>
+        <div class="progress-bar"><div id="tytBar" class="progress-fill"></div></div>
+        <div id="tytMeta" class="progress-meta">0 / 0 konu tamamlandı</div>
+      </article>
+      <article class="progress-card">
+        <div class="progress-label"><span>AYT</span><strong id="aytPercent" class="progress-number">%0</strong></div>
+        <div class="progress-bar"><div id="aytBar" class="progress-fill"></div></div>
+        <div id="aytMeta" class="progress-meta">0 / 0 konu tamamlandı</div>
+      </article>
+      <article class="progress-card">
+        <div class="progress-label"><span>GENEL</span><strong id="overallPercent" class="progress-number">%0</strong></div>
+        <div class="progress-bar"><div id="overallBar" class="progress-fill"></div></div>
+        <div id="overallMeta" class="progress-meta">0 / 0 konu tamamlandı</div>
+      </article>
+    </section>
+
+    <section class="toolbar" aria-label="Kontroller">
+      <div class="tabs" role="tablist" aria-label="Sınav seçimi">
+        <button class="tab active" data-exam="TYT" role="tab" aria-selected="true">TYT</button>
+        <button class="tab" data-exam="AYT" role="tab" aria-selected="false">AYT</button>
+      </div>
+      <div class="filters" role="group" aria-label="Konu filtresi">
+        <button class="filter active" data-filter="all">Tümü</button>
+        <button class="filter" data-filter="done">Tamamlananlar</button>
+        <button class="filter" data-filter="todo">Tamamlanmayanlar</button>
+      </div>
+      <button id="resetBtn" class="reset-btn" type="button">İlerlemeyi Sıfırla</button>
+    </section>
+
+    <section aria-labelledby="sectionTitle">
+      <div class="content-head">
+        <div>
+          <h2 id="sectionTitle" class="section-title">TYT Konuları</h2>
+          <p id="sectionNote" class="section-note"></p>
+        </div>
+      </div>
+      <div id="subjects" class="subjects"></div>
+      <div id="emptyState" class="empty">Bu filtreye uygun konu bulunamadı.</div>
+    </section>
+
+    <p class="footer-note">İlerleme yalnızca bu tarayıcıda, localStorage kullanılarak saklanır.</p>
+  </main>
+
+  <script>
+    const DATA = {"TYT":[{"id":"tyt-0","name":"Türkçe","topics":[{"id":"tyt-0-0","name":"Sözcükte Anlam"},{"id":"tyt-0-1","name":"Söz Yorumu"},{"id":"tyt-0-2","name":"Deyim ve Atasözü"},{"id":"tyt-0-3","name":"Cümlede Anlam"},{"id":"tyt-0-4","name":"Paragraf"},{"id":"tyt-0-5","name":"Paragrafta Anlatım Teknikleri"},{"id":"tyt-0-6","name":"Paragrafta Düşünceyi Geliştirme Yolları"},{"id":"tyt-0-7","name":"Paragrafta Yapı"},{"id":"tyt-0-8","name":"Paragrafta Konu-Ana Düşünce"},{"id":"tyt-0-9","name":"Paragrafta Yardımcı Düşünce"},{"id":"tyt-0-10","name":"Ses Bilgisi"},{"id":"tyt-0-11","name":"Yazım Kuralları"},{"id":"tyt-0-12","name":"Noktalama İşaretleri"},{"id":"tyt-0-13","name":"Sözcükte Yapı/Ekler"},{"id":"tyt-0-14","name":"Sözcük Türleri"},{"id":"tyt-0-15","name":"İsimler"},{"id":"tyt-0-16","name":"Zamirler"},{"id":"tyt-0-17","name":"Sıfatlar"},{"id":"tyt-0-18","name":"Zarflar"},{"id":"tyt-0-19","name":"Edat – Bağlaç – Ünlem"},{"id":"tyt-0-20","name":"Fiiller"},{"id":"tyt-0-21","name":"Fiilde Anlam (Kip-Kişi-Yapı)"},{"id":"tyt-0-22","name":"Ek Fiil"},{"id":"tyt-0-23","name":"Fiilimsi"},{"id":"tyt-0-24","name":"Fiilde Çatı"},{"id":"tyt-0-25","name":"Sözcük Grupları"},{"id":"tyt-0-26","name":"Cümlenin Ögeleri"},{"id":"tyt-0-27","name":"Cümle Türleri"},{"id":"tyt-0-28","name":"Anlatım Bozukluğu"}]},{"id":"tyt-1","name":"Matematik","topics":[{"id":"tyt-1-0","name":"Temel Kavramlar"},{"id":"tyt-1-1","name":"Sayı Basamakları"},{"id":"tyt-1-2","name":"Bölme ve Bölünebilme"},{"id":"tyt-1-3","name":"EBOB – EKOK"},{"id":"tyt-1-4","name":"Rasyonel Sayılar"},{"id":"tyt-1-5","name":"Basit Eşitsizlikler"},{"id":"tyt-1-6","name":"Mutlak Değer"},{"id":"tyt-1-7","name":"Üslü Sayılar"},{"id":"tyt-1-8","name":"Köklü Sayılar"},{"id":"tyt-1-9","name":"Çarpanlara Ayırma"},{"id":"tyt-1-10","name":"Oran Orantı"},{"id":"tyt-1-11","name":"Denklem Çözme"},{"id":"tyt-1-12","name":"Problemler"},{"id":"tyt-1-13","name":"Sayı Problemleri"},{"id":"tyt-1-14","name":"Kesir Problemleri"},{"id":"tyt-1-15","name":"Yaş Problemleri"},{"id":"tyt-1-16","name":"Hareket Hız Problemleri"},{"id":"tyt-1-17","name":"İşçi Emek Problemleri"},{"id":"tyt-1-18","name":"Yüzde Problemleri"},{"id":"tyt-1-19","name":"Kar Zarar Problemleri"},{"id":"tyt-1-20","name":"Karışım Problemleri"},{"id":"tyt-1-21","name":"Grafik Problemleri"},{"id":"tyt-1-22","name":"Rutin Olmayan Problemleri"},{"id":"tyt-1-23","name":"Kümeler – Kartezyen Çarpım"},{"id":"tyt-1-24","name":"Mantık"},{"id":"tyt-1-25","name":"Fonskiyonlar"},{"id":"tyt-1-26","name":"Polinomlar"},{"id":"tyt-1-27","name":"2.Dereceden Denklemler"},{"id":"tyt-1-28","name":"Permütasyon ve Kombinasyon"},{"id":"tyt-1-29","name":"Olasılık"},{"id":"tyt-1-30","name":"Veri – İstatistik"}]},{"id":"tyt-2","name":"Geometri","topics":[{"id":"tyt-2-0","name":"Temel Kavramlar"},{"id":"tyt-2-1","name":"Doğruda Açılar"},{"id":"tyt-2-2","name":"Üçgende Açılar"},{"id":"tyt-2-3","name":"Özel Üçgenler"},{"id":"tyt-2-4","name":"Dik Üçgen"},{"id":"tyt-2-5","name":"İkizkenar Üçgen"},{"id":"tyt-2-6","name":"Eşkenar Üçgen"},{"id":"tyt-2-7","name":"Açıortay"},{"id":"tyt-2-8","name":"Kenarortay"},{"id":"tyt-2-9","name":"Eşlik ve Benzerlik"},{"id":"tyt-2-10","name":"Üçgende Alan"},{"id":"tyt-2-11","name":"Üçgende Benzerlik"},{"id":"tyt-2-12","name":"Açı Kenar Bağıntıları"},{"id":"tyt-2-13","name":"Çokgenler"},{"id":"tyt-2-14","name":"Özel Dörtgenler"},{"id":"tyt-2-15","name":"Dörtgenler"},{"id":"tyt-2-16","name":"Deltoid"},{"id":"tyt-2-17","name":"Paralelkenar"},{"id":"tyt-2-18","name":"Eşkenar Dörtgen"},{"id":"tyt-2-19","name":"Dikdörtgen"},{"id":"tyt-2-20","name":"Kare"},{"id":"tyt-2-21","name":"Yamuk"},{"id":"tyt-2-22","name":"Çember ve Daire"},{"id":"tyt-2-23","name":"Çemberde Açı"},{"id":"tyt-2-24","name":"Çemberde Uzun"},{"id":"tyt-2-25","name":"Dairede Çevre ve Alan"},{"id":"tyt-2-26","name":"Analitik Geometri"},{"id":"tyt-2-27","name":"Noktanın Analitiği"},{"id":"tyt-2-28","name":"Doğrunun Analitiği"},{"id":"tyt-2-29","name":"Dönüşüm Geometrisi"},{"id":"tyt-2-30","name":"Analitik Geometri"},{"id":"tyt-2-31","name":"Katı Cisimler"},{"id":"tyt-2-32","name":"Prizmalar"},{"id":"tyt-2-33","name":"Küp"},{"id":"tyt-2-34","name":"Silindir"},{"id":"tyt-2-35","name":"Piramit"},{"id":"tyt-2-36","name":"Koni"},{"id":"tyt-2-37","name":"Küre"},{"id":"tyt-2-38","name":"Çemberin Analitiği"}]},{"id":"tyt-3","name":"Fizik","topics":[{"id":"tyt-3-0","name":"Fizik Bilimine Giriş"},{"id":"tyt-3-1","name":"Madde ve Özellikleri"},{"id":"tyt-3-2","name":"Sıvıların Kaldırma Kuvveti"},{"id":"tyt-3-3","name":"Basınç"},{"id":"tyt-3-4","name":"Isı, Sıcaklık ve Genleşme"},{"id":"tyt-3-5","name":"Hareket ve Kuvvet"},{"id":"tyt-3-6","name":"Dinamik"},{"id":"tyt-3-7","name":"İş, Güç ve Enerji"},{"id":"tyt-3-8","name":"Elektrik"},{"id":"tyt-3-9","name":"Manyetizma"},{"id":"tyt-3-10","name":"Dalgalar"},{"id":"tyt-3-11","name":"Optik"}]},{"id":"tyt-4","name":"Kimya","topics":[{"id":"tyt-4-0","name":"Kimya Bilimi"},{"id":"tyt-4-1","name":"Atom ve Periyodik Sistem"},{"id":"tyt-4-2","name":"Kimyasal Türler Arası Etkileşimler"},{"id":"tyt-4-3","name":"Maddenin Halleri"},{"id":"tyt-4-4","name":"Doğa ve Kimya"},{"id":"tyt-4-5","name":"Kimyanın Temel Kanunları"},{"id":"tyt-4-6","name":"Kimyasal Hesaplamalar"},{"id":"tyt-4-7","name":"Karışımlar"},{"id":"tyt-4-8","name":"Asit, Baz ve Tuz"},{"id":"tyt-4-9","name":"Kimya Her Yerde"}]},{"id":"tyt-5","name":"Biyoloji","topics":[{"id":"tyt-5-0","name":"Canlıların Ortak Özellikleri"},{"id":"tyt-5-1","name":"Canlıların Temel Bileşenleri"},{"id":"tyt-5-2","name":"Hücre ve Organeller – Madde Geçişleri"},{"id":"tyt-5-3","name":"Canlıların Sınıflandırılması"},{"id":"tyt-5-4","name":"Hücrede Bölünme – Üreme"},{"id":"tyt-5-5","name":"Kalıtım"},{"id":"tyt-5-6","name":"Bitki Biyolojisi"},{"id":"tyt-5-7","name":"Ekosistem"}]},{"id":"tyt-6","name":"Tarih","topics":[{"id":"tyt-6-0","name":"Tarih ve Zaman"},{"id":"tyt-6-1","name":"İnsanlığın İlk Dönemleri"},{"id":"tyt-6-2","name":"Ortaçağ’da Dünya"},{"id":"tyt-6-3","name":"İlk ve Orta Çağlarda Türk Dünyası"},{"id":"tyt-6-4","name":"İslam Medeniyetinin Doğuşu"},{"id":"tyt-6-5","name":"İlk Türk İslam Devletleri"},{"id":"tyt-6-6","name":"Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi"},{"id":"tyt-6-7","name":"Beylikten Devlete Osmanlı Siyaseti(1300-1453)"},{"id":"tyt-6-8","name":"Dünya Gücü Osmanlı Devleti (1453-1600)"},{"id":"tyt-6-9","name":"Yeni Çağ Avrupa Tarihi"},{"id":"tyt-6-10","name":"Yakın Çağ Avrupa Tarihi"},{"id":"tyt-6-11","name":"Osmanlı Devletinde Arayış Yılları"},{"id":"tyt-6-12","name":"18. Yüzyılda Değişim ve Diplomasi"},{"id":"tyt-6-13","name":"En Uzun Yüzyıl"},{"id":"tyt-6-14","name":"Osmanlı Kültür ve Medeniyeti"},{"id":"tyt-6-15","name":"20. Yüzyılda Osmanlı Devleti"},{"id":"tyt-6-16","name":"I. Dünya Savaşı"},{"id":"tyt-6-17","name":"Mondros Ateşkesi, İşgaller ve Cemiyetler"},{"id":"tyt-6-18","name":"Kurtuluş Savaşına Hazırlık Dönemi"},{"id":"tyt-6-19","name":"I. TBMM Dönemi"},{"id":"tyt-6-20","name":"Kurtuluş Savaşı ve Antlaşmalar"},{"id":"tyt-6-21","name":"II. TBMM Dönemi ve Çok Partili Hayata Geçiş"},{"id":"tyt-6-22","name":"Türk İnkılabı"},{"id":"tyt-6-23","name":"Atatürk İlkeleri"},{"id":"tyt-6-24","name":"Atatürk Dönemi Türk Dış Politikası"}]},{"id":"tyt-7","name":"Coğrafya","topics":[{"id":"tyt-7-0","name":"Doğa ve İnsan"},{"id":"tyt-7-1","name":"Dünya’nın Şekli ve Hareketleri"},{"id":"tyt-7-2","name":"Coğrafi Konum"},{"id":"tyt-7-3","name":"Harita Bilgisi"},{"id":"tyt-7-4","name":"Atmosfer ve Sıcaklık"},{"id":"tyt-7-5","name":"İklimler"},{"id":"tyt-7-6","name":"Basınç ve Rüzgarlar"},{"id":"tyt-7-7","name":"Nem, Yağış ve Buharlaşma"},{"id":"tyt-7-8","name":"İç Kuvvetler / Dış Kuvvetler"},{"id":"tyt-7-9","name":"Su – Toprak ve Bitkiler"},{"id":"tyt-7-10","name":"Nüfus"},{"id":"tyt-7-11","name":"Göç"},{"id":"tyt-7-12","name":"Yerleşme"},{"id":"tyt-7-13","name":"Türkiye’nin Yer Şekilleri"},{"id":"tyt-7-14","name":"Ekonomik Faaliyetler"},{"id":"tyt-7-15","name":"Bölgeler"},{"id":"tyt-7-16","name":"Uluslararası Ulaşım Hatları"},{"id":"tyt-7-17","name":"Çevre ve Toplum"},{"id":"tyt-7-18","name":"Doğal Afetler"}]},{"id":"tyt-8","name":"Felsefe","topics":[{"id":"tyt-8-0","name":"Felsefenin Konusu"},{"id":"tyt-8-1","name":"Bilgi Felsefesi"},{"id":"tyt-8-2","name":"Varlık Felsefesi"},{"id":"tyt-8-3","name":"Din, Kültür ve Medniyet"},{"id":"tyt-8-4","name":"Ahlak Felsefesi"},{"id":"tyt-8-5","name":"Sanat Felsefesi"},{"id":"tyt-8-6","name":"Din Felsefesi"},{"id":"tyt-8-7","name":"Siyaset Felsefesi"},{"id":"tyt-8-8","name":"Bilim Felsefesi"}]},{"id":"tyt-9","name":"Din Kültürü ve Ahlak Bilgisi","topics":[{"id":"tyt-9-0","name":"İnanç"},{"id":"tyt-9-1","name":"İbadet"},{"id":"tyt-9-2","name":"Ahlak ve Değerler"},{"id":"tyt-9-3","name":"Din, Kültür ve Medniyet"},{"id":"tyt-9-4","name":"Hz. Mhammed (S.A.V.)"},{"id":"tyt-9-5","name":"Vahiy ve Akıl"},{"id":"tyt-9-6","name":"Dünya ve Ahiret"},{"id":"tyt-9-7","name":"Kur’an'a göre Hz. Muhammed (S.A.V.)"},{"id":"tyt-9-8","name":"İnançla İlgili Meseleler"},{"id":"tyt-9-9","name":"Yahudilik ve Hristiyanlık"},{"id":"tyt-9-10","name":"İslam ve Bilim"},{"id":"tyt-9-11","name":"Anadolu da İslam"},{"id":"tyt-9-12","name":"İslam Düşüncesinde Tasavvufi Yorumlar"},{"id":"tyt-9-13","name":"Güncel Dini Meseler"},{"id":"tyt-9-14","name":"Hint ve Çin Dinleri"}]}],"AYT":[{"id":"ayt-0","name":"Edebiyat","topics":[{"id":"ayt-0-0","name":"Anlam Bilgisi"},{"id":"ayt-0-1","name":"Dil Bilgisi"},{"id":"ayt-0-2","name":"Güzel Sanatlar ve Edebiyat"},{"id":"ayt-0-3","name":"Metinlerin Sınıflandırılması"},{"id":"ayt-0-4","name":"Şiir Bilgisi"},{"id":"ayt-0-5","name":"Edebi Sanatlar"},{"id":"ayt-0-6","name":"Türk Edebiyatı Dönemleri"},{"id":"ayt-0-7","name":"İslamiyet Öncesi Türk Edebiyatı ve Geçiş Dönemi"},{"id":"ayt-0-8","name":"Halk Edebiyatı"},{"id":"ayt-0-9","name":"Divan Edebiyatı"},{"id":"ayt-0-10","name":"Tanzimat Edebiyatı"},{"id":"ayt-0-11","name":"Servet-i Fünun Edebiyatı"},{"id":"ayt-0-12","name":"Fecr-i Ati Edebiyatı"},{"id":"ayt-0-13","name":"Milli Edebiyat"},{"id":"ayt-0-14","name":"Cumhuriyet Dönemi Edebiyatı"},{"id":"ayt-0-15","name":"Edebiyat Akımları"},{"id":"ayt-0-16","name":"Dünya Edebiyatı"}]},{"id":"ayt-1","name":"Matematik","topics":[{"id":"ayt-1-0","name":"Temel Kavramlar"},{"id":"ayt-1-1","name":"Sayı Basamakları"},{"id":"ayt-1-2","name":"Bölme ve Bölünebilme"},{"id":"ayt-1-3","name":"EBOB - EKOK"},{"id":"ayt-1-4","name":"Rasyonel Sayılar"},{"id":"ayt-1-5","name":"Basit Eşitsizlikler"},{"id":"ayt-1-6","name":"Mutlak Değer"},{"id":"ayt-1-7","name":"Üslü Sayılar"},{"id":"ayt-1-8","name":"Köklü Sayılar"},{"id":"ayt-1-9","name":"Çarpanlara Ayırma"},{"id":"ayt-1-10","name":"Oran Orantı"},{"id":"ayt-1-11","name":"Denklem Çözme"},{"id":"ayt-1-12","name":"Problemler"},{"id":"ayt-1-13","name":"Kümeler"},{"id":"ayt-1-14","name":"Kartezyen Çarpım"},{"id":"ayt-1-15","name":"Mantık"},{"id":"ayt-1-16","name":"Fonskiyonlar"},{"id":"ayt-1-17","name":"Polinomlar"},{"id":"ayt-1-18","name":"2.Dereceden Denklemler"},{"id":"ayt-1-19","name":"Permütasyon ve Kombinasyon"},{"id":"ayt-1-20","name":"Binom ve Olasılık"},{"id":"ayt-1-21","name":"İstatistik"},{"id":"ayt-1-22","name":"Karmaşık Sayılar"},{"id":"ayt-1-23","name":"2.Dereceden Eşitsizlikler"},{"id":"ayt-1-24","name":"Parabol"},{"id":"ayt-1-25","name":"Trigonometri"},{"id":"ayt-1-26","name":"Logaritma"},{"id":"ayt-1-27","name":"Diziler"},{"id":"ayt-1-28","name":"Limit"},{"id":"ayt-1-29","name":"Türev"},{"id":"ayt-1-30","name":"İntegral"}]},{"id":"ayt-2","name":"Geometri","topics":[{"id":"ayt-2-0","name":"Temel Kavramlar"},{"id":"ayt-2-1","name":"Doğruda Açılar"},{"id":"ayt-2-2","name":"Üçgende Açılar"},{"id":"ayt-2-3","name":"Özel Üçgenler"},{"id":"ayt-2-4","name":"Dik Üçgen"},{"id":"ayt-2-5","name":"İkizkenar Üçgen"},{"id":"ayt-2-6","name":"Eşkenar Üçgen"},{"id":"ayt-2-7","name":"Açıortay"},{"id":"ayt-2-8","name":"Kenarortay"},{"id":"ayt-2-9","name":"Üçgende Alan"},{"id":"ayt-2-10","name":"Üçgende Benzerlik"},{"id":"ayt-2-11","name":"Açı Kenar Bağıntıları"},{"id":"ayt-2-12","name":"Çokgenler"},{"id":"ayt-2-13","name":"Özel Dörtgenler"},{"id":"ayt-2-14","name":"Dörtgenler"},{"id":"ayt-2-15","name":"Deltoid"},{"id":"ayt-2-16","name":"Paralelkenar"},{"id":"ayt-2-17","name":"Eşkenar Dörtgen"},{"id":"ayt-2-18","name":"Dikdörtgen"},{"id":"ayt-2-19","name":"Kare"},{"id":"ayt-2-20","name":"İkizkenar"},{"id":"ayt-2-21","name":"Yamuk"},{"id":"ayt-2-22","name":"Çember ve Daire"},{"id":"ayt-2-23","name":"Analitik Geometri"},{"id":"ayt-2-24","name":"Noktanın Analitiği"},{"id":"ayt-2-25","name":"Doğrunun Analitiği"},{"id":"ayt-2-26","name":"Dönüşüm Geometrisi"},{"id":"ayt-2-27","name":"Katı Cisimler (Uzay Geometri)"},{"id":"ayt-2-28","name":"Dikdörtgenler Prizması"},{"id":"ayt-2-29","name":"Küp"},{"id":"ayt-2-30","name":"Silindir"},{"id":"ayt-2-31","name":"Piramit"},{"id":"ayt-2-32","name":"Koni"},{"id":"ayt-2-33","name":"Küre"},{"id":"ayt-2-34","name":"Çemberin Analitiği"}]},{"id":"ayt-3","name":"Fizik","topics":[{"id":"ayt-3-0","name":"Vektörler"},{"id":"ayt-3-1","name":"Kuvvet, Tork ve Denge"},{"id":"ayt-3-2","name":"Kütle Merkezi"},{"id":"ayt-3-3","name":"Basit Makineler"},{"id":"ayt-3-4","name":"Hareket"},{"id":"ayt-3-5","name":"Newton’un Hareket Yasaları"},{"id":"ayt-3-6","name":"İş, Güç ve Enerji II"},{"id":"ayt-3-7","name":"Atışlar"},{"id":"ayt-3-8","name":"İtme ve Momentum"},{"id":"ayt-3-9","name":"Elektrik Alan ve Potansiyel"},{"id":"ayt-3-10","name":"Paralel Levhalar ve Sığa"},{"id":"ayt-3-11","name":"Manyetik Alan ve Manyetik Kuvvet"},{"id":"ayt-3-12","name":"İndüksiyon, Alternatif Akım ve Transformatörler"},{"id":"ayt-3-13","name":"Çembersel Hareket"},{"id":"ayt-3-14","name":"Dönme, Yuvarlanma ve Açısal Momentum"},{"id":"ayt-3-15","name":"Kütle Çekim ve Kepler Yasaları"},{"id":"ayt-3-16","name":"Basit Harmonik Hareket"},{"id":"ayt-3-17","name":"Dalga Mekaniği ve Elektromanyetik Dalgalar"},{"id":"ayt-3-18","name":"Atom Modelleri"},{"id":"ayt-3-19","name":"Büyük Patlama ve Parçacık Fiziği"},{"id":"ayt-3-20","name":"Radyoaktivite"},{"id":"ayt-3-21","name":"Özel Görelilik"},{"id":"ayt-3-22","name":"Kara Cisim Işıması"},{"id":"ayt-3-23","name":"Fotoelektrik Olay ve Compton Olayı"},{"id":"ayt-3-24","name":"Modern Fiziğin Teknolojideki Uygulamaları"}]},{"id":"ayt-4","name":"Kimya","topics":[{"id":"ayt-4-0","name":"Kimya Bilimi"},{"id":"ayt-4-1","name":"Atom ve Periyodik Sistem"},{"id":"ayt-4-2","name":"Kimyasal Türler Arası Etkileşimler"},{"id":"ayt-4-3","name":"Kimyasal Hesaplamalar"},{"id":"ayt-4-4","name":"Kimyanın Temel Kanunları"},{"id":"ayt-4-5","name":"Asit, Baz ve Tuz"},{"id":"ayt-4-6","name":"Maddenin Halleri"},{"id":"ayt-4-7","name":"Karışımlar"},{"id":"ayt-4-8","name":"Doğa ve Kimya"},{"id":"ayt-4-9","name":"Kimya Her Yerde"},{"id":"ayt-4-10","name":"Modern Atom Teorisi"},{"id":"ayt-4-11","name":"Gazlar"},{"id":"ayt-4-12","name":"Sıvı Çözeltiler"},{"id":"ayt-4-13","name":"Kimyasal Tepkimelerde Enerji"},{"id":"ayt-4-14","name":"Kimyasal Tepkimelerde Hız"},{"id":"ayt-4-15","name":"Kimyasal Tepkimelerde Denge"},{"id":"ayt-4-16","name":"Asit-Baz Dengesi"},{"id":"ayt-4-17","name":"Çözünürlük Dengesi"},{"id":"ayt-4-18","name":"Kimya ve Elektrik"},{"id":"ayt-4-19","name":"Organik Kimyaya Giriş"},{"id":"ayt-4-20","name":"Organik Kimya"},{"id":"ayt-4-21","name":"Enerji Kaynakları ve Bilimsel Gelişmeler"}]},{"id":"ayt-5","name":"Biyoloji","topics":[{"id":"ayt-5-0","name":"Sinir Sistemi"},{"id":"ayt-5-1","name":"Endokrin Sistem ve Hormonlar"},{"id":"ayt-5-2","name":"Duyu Organları"},{"id":"ayt-5-3","name":"Destek ve Hareket Sistemi"},{"id":"ayt-5-4","name":"Sindirim Sistemi"},{"id":"ayt-5-5","name":"Dolaşım ve Bağışıklık Sistemi"},{"id":"ayt-5-6","name":"Solunum Sistemi"},{"id":"ayt-5-7","name":"Üriner Sistem (Boşaltım Sistemi)"},{"id":"ayt-5-8","name":"Üreme Sistemi ve Embriyonik Gelişim"},{"id":"ayt-5-9","name":"Komünite Ekolojisi"},{"id":"ayt-5-10","name":"Popülasyon Ekolojisi"},{"id":"ayt-5-11","name":"Genden Proteine"},{"id":"ayt-5-12","name":"Nükleik Asitler"},{"id":"ayt-5-13","name":"Genetik Şifre ve Protein Sentezi"},{"id":"ayt-5-14","name":"Canlılarda Enerji Dönüşümleri"},{"id":"ayt-5-15","name":"Canlılık ve Enerji"},{"id":"ayt-5-16","name":"Fotosentez"},{"id":"ayt-5-17","name":"Kemosentez"},{"id":"ayt-5-18","name":"Hücresel Solunum"},{"id":"ayt-5-19","name":"Bitki Biyolojisi"},{"id":"ayt-5-20","name":"Canlılar ve Çevre"}]},{"id":"ayt-6","name":"Tarih Dersi","topics":[{"id":"ayt-6-0","name":"Tarih ve Zaman"},{"id":"ayt-6-1","name":"İnsanlığın İlk Dönemleri"},{"id":"ayt-6-2","name":"Orta Çağ’da Dünya"},{"id":"ayt-6-3","name":"İlk ve Orta Çağlarda Türk Dünyası"},{"id":"ayt-6-4","name":"İslam Medeniyetinin Doğuşu"},{"id":"ayt-6-5","name":"Türklerin İslamiyet’i Kabulü ve İlk Türk İslam Devletleri"},{"id":"ayt-6-6","name":"Yerleşme ve Devletleşme Sürecinde Selçuklu Türkiyesi"},{"id":"ayt-6-7","name":"Beylikten Devlete Osmanlı Siyaseti"},{"id":"ayt-6-8","name":"Devletleşme Sürecinde Savaşçılar ve Askerler"},{"id":"ayt-6-9","name":"Beylikten Devlete Osmanlı Medeniyeti"},{"id":"ayt-6-10","name":"Dünya Gücü Osmanlı"},{"id":"ayt-6-11","name":"Sultan ve Osmanlı Merkez Teşkilatı"},{"id":"ayt-6-12","name":"Klasik Çağda Osmanlı Toplum Düzeni"},{"id":"ayt-6-13","name":"Değişen Dünya Dengeleri Karşısında Osmanlı Siyaseti"},{"id":"ayt-6-14","name":"Değişim Çağında Avrupa ve Osmanlı"},{"id":"ayt-6-15","name":"Uluslararası İlişkilerde Denge Stratejisi (1774-1914)"},{"id":"ayt-6-16","name":"Devrimler Çağında Değişen Devlet-Toplum İlişkileri"},{"id":"ayt-6-17","name":"Sermaye ve Emek"},{"id":"ayt-6-18","name":"XIX. ve XX. Yüzyılda Değişen Gündelik Hayat"},{"id":"ayt-6-19","name":"XX. Yüzyıl Başlarında Osmanlı Devleti ve Dünya"},{"id":"ayt-6-20","name":"Milli Mücadele"},{"id":"ayt-6-21","name":"Atatürkçülük ve Türk İnkılabı"},{"id":"ayt-6-22","name":"İki Savaş Arasındaki Dönemde Türkiye ve Dünya"},{"id":"ayt-6-23","name":"II. Dünya Savaşı Sürecinde Türkiye ve Dünya"},{"id":"ayt-6-24","name":"II. Dünya Savaşı Sonrasında Türkiye ve Dünya"},{"id":"ayt-6-25","name":"Toplumsal Devrim Çağında Dünya ve Türkiye"},{"id":"ayt-6-26","name":"XXI. Yüzyılın Eşiğinde Türkiye ve Dünya"}]},{"id":"ayt-7","name":"Coğrafya","topics":[{"id":"ayt-7-0","name":"Ekosistem"},{"id":"ayt-7-1","name":"Biyoçeşitlilik"},{"id":"ayt-7-2","name":"Biyomlar"},{"id":"ayt-7-3","name":"Ekosistemin Unsurları"},{"id":"ayt-7-4","name":"Enerji Akışı ve Madde Döngüsü"},{"id":"ayt-7-5","name":"Ekstrem Doğa Olayları"},{"id":"ayt-7-6","name":"Küresel İklim Değişimi"},{"id":"ayt-7-7","name":"Nüfus Politikaları"},{"id":"ayt-7-8","name":"Türkiye’de Nüfus ve Yerleşme"},{"id":"ayt-7-9","name":"Ekonomik Faaliyetler ve Doğal Kaynaklar"},{"id":"ayt-7-10","name":"Göç ve Şehirleşme"},{"id":"ayt-7-11","name":"Türkiye Ekonomisi"},{"id":"ayt-7-12","name":"Türkiye’nin Ekonomi Politikaları"},{"id":"ayt-7-13","name":"Türkiye Ekonomisinin Sektörel Dağılımı"},{"id":"ayt-7-14","name":"Türkiye’de Tarım"},{"id":"ayt-7-15","name":"Türkiye’de Hayvancılık"},{"id":"ayt-7-16","name":"Türkiye’de Madenler ve Enerji Kaynakları"},{"id":"ayt-7-17","name":"Türkiye’de Sanayi"},{"id":"ayt-7-18","name":"Türkiye’de Ulaşım"},{"id":"ayt-7-19","name":"Türkiye’de Ticaret ve Turizm"},{"id":"ayt-7-20","name":"Geçmişten Geleceğe Şehir ve Ekonomi"},{"id":"ayt-7-21","name":"Türkiye’nin İşlevsel Bölgeleri ve Kalkınma Projeleri"},{"id":"ayt-7-22","name":"Hizmet Sektörünün Ekonomideki Yeri"},{"id":"ayt-7-23","name":"Küresel Ticaret"},{"id":"ayt-7-24","name":"Bölgeler ve Ülkeler"},{"id":"ayt-7-25","name":"İlk Uygarlıklar"},{"id":"ayt-7-26","name":"Kültür Bölgeleri ve Türk Kültürü"},{"id":"ayt-7-27","name":"Sanayileşme Süreci: Almanya"},{"id":"ayt-7-28","name":"Tarım ve Ekonomi İlişkisi Fransa – Somali"},{"id":"ayt-7-29","name":"Ülkeler Arası Etkileşim"},{"id":"ayt-7-30","name":"Jeopolitik Konum"},{"id":"ayt-7-31","name":"Çatışma Bölgeleri"},{"id":"ayt-7-32","name":"Küresel ve Bölgesel Örgütler"},{"id":"ayt-7-33","name":"Çevre ve Toplum"},{"id":"ayt-7-34","name":"Çevre Sorunları ve Türleri"},{"id":"ayt-7-35","name":"Madenler ve Enerji Kaynaklarının Çevreye Etkisi"},{"id":"ayt-7-36","name":"Doğal Kaynakların Sürdürülebilir Kullanımı"},{"id":"ayt-7-37","name":"Ekolojik Ayak İzi"},{"id":"ayt-7-38","name":"Doğal Çevrenin Sınırlılığı"},{"id":"ayt-7-39","name":"Çevre Politikaları"},{"id":"ayt-7-40","name":"Çevresel Örgütler"},{"id":"ayt-7-41","name":"Çevre Anlaşmaları"},{"id":"ayt-7-42","name":"Doğal Afetler"}]},{"id":"ayt-8","name":"Felsefe","topics":[{"id":"ayt-8-0","name":"Felsefe’nin Konusu"},{"id":"ayt-8-1","name":"Bilgi Felsefesi"},{"id":"ayt-8-2","name":"Varlık Felsefesi"},{"id":"ayt-8-3","name":"Ahlak Felsefesi"},{"id":"ayt-8-4","name":"Sanat Felsefesi"},{"id":"ayt-8-5","name":"Din Felsefesi"},{"id":"ayt-8-6","name":"Siyaset Felsefesi"},{"id":"ayt-8-7","name":"Bilim Felsefesi"},{"id":"ayt-8-8","name":"İlk Çağ Felsefesi"},{"id":"ayt-8-9","name":"MÖ 6. Yüzyıl – MS 2. Yüzyıl Felsefesi"},{"id":"ayt-8-10","name":"MS 2. Yüzyıl – MS 15. Yüzyıl Felsefesi"},{"id":"ayt-8-11","name":"15. Yüzyıl – 17. Yüzyıl Felsefesi"},{"id":"ayt-8-12","name":"18. Yüzyıl – 19. Yüzyıl Felsefesi"},{"id":"ayt-8-13","name":"20. Yüzyıl Felsefesi"}]},{"id":"ayt-9","name":"Mantık","topics":[{"id":"ayt-9-0","name":"Mantığa Giriş"},{"id":"ayt-9-1","name":"Klasik Mantık"},{"id":"ayt-9-2","name":"Mantık ve Dil"},{"id":"ayt-9-3","name":"Sembolik Mantık"}]},{"id":"ayt-10","name":"Psikoloji","topics":[{"id":"ayt-10-0","name":"Psikoloji Bilimini Tanıyalım"},{"id":"ayt-10-1","name":"Psikolojinin Temel Süreçleri"},{"id":"ayt-10-2","name":"Öğrenme Bellek Düşünme"},{"id":"ayt-10-3","name":"Ruh Sağlığının Temelleri"}]},{"id":"ayt-11","name":"Sosyoloji","topics":[{"id":"ayt-11-0","name":"Sosyolojiye Giriş"},{"id":"ayt-11-1","name":"Birey ve Toplum"},{"id":"ayt-11-2","name":"Toplumsal Yapı"},{"id":"ayt-11-3","name":"Toplumsal Değişme ve Gelişme"},{"id":"ayt-11-4","name":"Toplum ve Kültür"},{"id":"ayt-11-5","name":"Toplumsal Kurumlar"}]},{"id":"ayt-12","name":"Sınavı Din Kültürü ve Ahlak Bilgisi Dersi","topics":[{"id":"ayt-12-0","name":"Sinir Sistemi"},{"id":"ayt-12-1","name":"Endokrin Sistem ve Hormonlar"},{"id":"ayt-12-2","name":"Duyu Organları"},{"id":"ayt-12-3","name":"Destek ve Hareket Sistemi"},{"id":"ayt-12-4","name":"Sindirim Sistemi"},{"id":"ayt-12-5","name":"Dolaşım ve Bağışıklık Sistemi"},{"id":"ayt-12-6","name":"Solunum Sistemi"},{"id":"ayt-12-7","name":"Üriner Sistem (Boşaltım Sistemi)"},{"id":"ayt-12-8","name":"Üreme Sistemi ve Embriyonik Gelişim"},{"id":"ayt-12-9","name":"Komünite Ekolojisi"},{"id":"ayt-12-10","name":"Popülasyon Ekolojisi"},{"id":"ayt-12-11","name":"Genden Proteine"},{"id":"ayt-12-12","name":"Nükleik Asitler"},{"id":"ayt-12-13","name":"Genetik Şifre ve Protein Sentezi"},{"id":"ayt-12-14","name":"Canlılarda Enerji Dönüşümleri"},{"id":"ayt-12-15","name":"Canlılık ve Enerji"},{"id":"ayt-12-16","name":"Fotosentez"},{"id":"ayt-12-17","name":"Kemosentez"},{"id":"ayt-12-18","name":"Hücresel Solunum"},{"id":"ayt-12-19","name":"Bitki Biyolojisi"},{"id":"ayt-12-20","name":"Canlılar ve Çevre"}]}]};
+    const STORAGE_KEY = 'yks-2027-calisma-ilerleme-v1';
+
+    let state = {
+      exam: 'TYT',
+      filter: 'all',
+      progress: loadProgress(),
+      openSubjects: new Set()
+    };
+
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveProgress() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress)); } catch { /* Storage unavailable: keep UI functional. */ }
+    }
+
+    function isDone(topicId) { return state.progress[topicId] === true; }
+    function pct(done, total) { return total ? Math.round((done / total) * 100) : 0; }
+
+    function totals(exam) {
+      const subjects = DATA[exam];
+      let total = 0, done = 0;
+      for (const subject of subjects) {
+        total += subject.topics.length;
+        done += subject.topics.filter(t => isDone(t.id)).length;
+      }
+      return { done, total, percent: pct(done, total) };
+    }
+
+    function updateDashboard() {
+      const tyt = totals('TYT');
+      const ayt = totals('AYT');
+      const overall = { done: tyt.done + ayt.done, total: tyt.total + ayt.total };
+      overall.percent = pct(overall.done, overall.total);
+
+      for (const [key, data] of [['tyt', tyt], ['ayt', ayt], ['overall', overall]]) {
+        document.getElementById(key + 'Percent').textContent = '%' + data.percent;
+        document.getElementById(key + 'Bar').style.width = data.percent + '%';
+        document.getElementById(key + 'Meta').textContent = `${data.done} / ${data.total} konu tamamlandı`;
+      }
+    }
+
+    function visibleTopics(subject) {
+      if (state.filter === 'all') return subject.topics;
+      if (state.filter === 'done') return subject.topics.filter(t => isDone(t.id));
+      return subject.topics.filter(t => !isDone(t.id));
+    }
+
+    function subjectPercent(subject) {
+      const done = subject.topics.filter(t => isDone(t.id)).length;
+      return { done, total: subject.topics.length, percent: pct(done, subject.topics.length) };
+    }
+
+    function renderSubjects() {
+      const container = document.getElementById('subjects');
+      const empty = document.getElementById('emptyState');
+      const subjects = DATA[state.exam];
+      let anyVisible = false;
+      container.innerHTML = '';
+
+      subjects.forEach((subject, subjectIndex) => {
+        const visible = visibleTopics(subject);
+        if (!visible.length) return;
+        anyVisible = true;
+        const stats = subjectPercent(subject);
+        const card = document.createElement('article');
+        card.className = 'subject-card' + (state.openSubjects.has(subject.id) ? ' open' : '');
+
+        const header = document.createElement('button');
+        header.className = 'subject-head';
+        header.type = 'button';
+        header.setAttribute('aria-expanded', state.openSubjects.has(subject.id) ? 'true' : 'false');
+        header.innerHTML = `
+          <div class="subject-main">
+            <h3 class="subject-name">${escapeHtml(subject.name)}</h3>
+            <div class="subject-sub">${stats.done} / ${stats.total} konu tamamlandı</div>
+          </div>
+          <div class="subject-percent">%${stats.percent}</div>
+          <div class="chevron" aria-hidden="true">⌄</div>
+          <div class="subject-progress"><span style="width:${stats.percent}%"></span></div>
+        `;
+        header.addEventListener('click', () => {
+          if (state.openSubjects.has(subject.id)) state.openSubjects.delete(subject.id);
+          else state.openSubjects.add(subject.id);
+          renderSubjects();
+        });
+
+        const topicWrap = document.createElement('div');
+        topicWrap.className = 'topic-wrap';
+        topicWrap.setAttribute('role', 'group');
+        topicWrap.setAttribute('aria-label', subject.name + ' konuları');
+
+        visible.forEach(topic => {
+          const row = document.createElement('div');
+          row.className = 'topic-row';
+          const label = document.createElement('label');
+          label.className = 'topic-label';
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = isDone(topic.id);
+          checkbox.setAttribute('aria-label', topic.name);
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) state.progress[topic.id] = true;
+            else delete state.progress[topic.id];
+            saveProgress();
+            updateDashboard();
+            renderSubjects();
+          });
+          const text = document.createElement('span');
+          text.className = 'topic-text' + (checkbox.checked ? ' topic-done' : '');
+          text.textContent = topic.name;
+          label.append(checkbox, text);
+          row.append(label);
+          topicWrap.append(row);
+        });
+
+        card.append(header, topicWrap);
+        container.append(card);
+      });
+
+      empty.classList.toggle('show', !anyVisible);
+      document.getElementById('sectionTitle').textContent = state.exam + ' Konuları';
+      const current = totals(state.exam);
+      document.getElementById('sectionNote').textContent = `${current.done} / ${current.total} konu tamamlandı · %${current.percent} ilerleme`;
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = value;
+      return div.innerHTML;
+    }
+
+    document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+      state.exam = btn.dataset.exam;
+      state.filter = 'all';
+      state.openSubjects = new Set();
+      document.querySelectorAll('.tab').forEach(b => {
+        const active = b.dataset.exam === state.exam;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('.filter').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+      renderSubjects();
+    }));
+
+    document.querySelectorAll('.filter').forEach(btn => btn.addEventListener('click', () => {
+      state.filter = btn.dataset.filter;
+      document.querySelectorAll('.filter').forEach(b => b.classList.toggle('active', b.dataset.filter === state.filter));
+      renderSubjects();
+    }));
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (!Object.keys(state.progress).length) return;
+      const confirmed = window.confirm('Tüm işaretli konular silinsin mi? Bu işlem geri alınamaz.');
+      if (!confirmed) return;
+      state.progress = {};
+      state.openSubjects = new Set();
+      saveProgress();
+      updateDashboard();
+      renderSubjects();
+    });
+
+    updateDashboard();
+    renderSubjects();
+  </script>
+</body>
+</html>
